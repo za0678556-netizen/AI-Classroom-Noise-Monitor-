@@ -1,28 +1,25 @@
-# sensor.py
-import pyaudio
+import sounddevice as sd
 import numpy as np
 from config import SAMPLE_RATE, CHUNK_SIZE
 
 class NoiseSensor:
     def __init__(self):
-        self.audio = pyaudio.PyAudio()
-        self.stream = self.audio.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=SAMPLE_RATE,
-            input=True,
-            frames_per_buffer=CHUNK_SIZE
-        )
+        # Sounddevice ko open rakhne ki zarurat nahi, direct record karenge
+        pass
 
     def get_db_level(self):
-        data = np.frombuffer(self.stream.read(CHUNK_SIZE), dtype=np.int16)
-        rms = np.sqrt(np.mean(data**2))
-        if rms == 0:
-            return 0
-        db = 20 * np.log10(rms)
+        # Mic se 1 chunk record karo
+        recording = sd.rec(CHUNK_SIZE, samplerate=SAMPLE_RATE, channels=1, dtype='int16')
+        sd.wait()  # Record complete hone tak wait karo
+
+        # RMS nikal ke dB mein convert karo
+        rms = np.sqrt(np.mean(recording**2))
+        if rms > 0:
+            db = 20 * np.log10(rms)
+        else:
+            db = 0
         return round(db, 2)
 
     def close(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        self.audio.terminate()
+        # Kuch close karna nahi hai sounddevice mein
+        pass
